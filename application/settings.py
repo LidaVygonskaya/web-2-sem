@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+
+import random
 from ConfigParser import ConfigParser
 
 
@@ -18,7 +20,7 @@ from ConfigParser import ConfigParser
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 config = ConfigParser()
-config.read(os.path.join(BASE_DIR, '../django.conf'))
+config.read(os.path.join(BASE_DIR, 'django.conf'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
@@ -26,11 +28,19 @@ config.read(os.path.join(BASE_DIR, '../django.conf'))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config.get('main', 'SECRET')
 
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'), # We do this so that django's collectstatic copies or our bundles to the STATIC_ROOT or syncs them to whatever storage we use.
+)
+print STATICFILES_DIRS[0]
+
+SITE_URL='http://127.0.0.1:8001'
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
+ADMINS = [(config.get('admin', 'NAME'), config.get('admin', 'EMAIL'))]
 
 # Application definition
 
@@ -43,7 +53,33 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'debug_toolbar',
     'core.apps.CoreConfig',
+    'post.apps.PostConfig',
+    'comment.apps.CommentConfig',
+    'like.apps.LikeConfig',
+    'event.apps.EventConfig',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'social_django',
+    
 ]
+
+EMAIL_PORT = 1025
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAdminUser',
+    ],
+    'PAGE_SIZE': 20,
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+
+
+
+    )
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -73,6 +109,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
+
             ],
         },
     },
@@ -132,3 +171,44 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/home/lida/web_project/media/'
+
+
+
+#python social auth vk
+
+SOCIAL_AUTH_VK_OAUTH2_KEY = '6198279'
+SOCIAL_AUTH_VK_OAUTH2_SECRET = 'nEH6TS2pCvdjtSc8wIk1'
+SOCIAL_AUTH_LOGIN_URL = '/app/oauth2login'
+
+SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email',]
+
+SOCIAL_AUTH_VK_OAUTH2_EXTRA_DATA = ['email', ]
+SOCIAL_AUTH_CREATE_USERS = True
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'social_core.pipeline.social_auth.associate_by_email',
+)
+
+
+LOGIN_REDIRECT_URL='/app/v1/'
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.vk.VKOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)

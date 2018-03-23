@@ -1,9 +1,45 @@
+# coding=utf-8
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from event.admin import WatchableAdmin
+from event.models import Event
+from like.admin import LikeAbleAdmin
+from like.models import Like
 from .models import User
+from post.models import Post
+from comment.models import Comment
 
 
-@admin.register(User)
+
 class UserAdmin(BaseUserAdmin):
 
+    fieldsets = BaseUserAdmin.fieldsets + (
+        (u'Дополнительно', {'fields': ('admin_avatar', 'avatar')}),
+    )
+    readonly_fields = ('admin_avatar',)
+    def admin_avatar(self, instance):
+        return instance.avatar and u'<img src="{0}" width="100px" />'.format(
+            instance.avatar.url
+        )
+    admin_avatar.allow_tags = True
+    admin_avatar.short_description = u'Аватар'
+
+admin.site.register(User, UserAdmin)
+
+
+@admin.register(Post)
+class PostAdmin(LikeAbleAdmin):
+    readonly_fields = ('likes_count', 'comments_count',)
     pass
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(Comment)
+class CommentAdmin(LikeAbleAdmin):
+    readonly_fields = ('likes_count',)
+
+    pass
+
